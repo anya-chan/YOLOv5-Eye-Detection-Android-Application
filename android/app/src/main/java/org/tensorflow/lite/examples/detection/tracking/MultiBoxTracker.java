@@ -16,6 +16,7 @@ limitations under the License.
 package org.tensorflow.lite.examples.detection.tracking;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -25,11 +26,21 @@ import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
+import android.view.View;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
+
+import org.tensorflow.lite.examples.detection.CameraActivity;
+import org.tensorflow.lite.examples.detection.DetectorActivity;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
@@ -39,9 +50,9 @@ import org.tensorflow.lite.examples.detection.tflite.Classifier.Recognition;
 public class MultiBoxTracker {
   private static final float TEXT_SIZE_DIP = 18;
   private static final float MIN_SIZE = 16.0f;
-  private static final int[] COLORS = {
-          Color.BLUE,
-          Color.RED,
+  private static final int[] COLORS = { //defined some colors for different classes
+          Color.BLUE, //iris
+          Color.RED, //pupil
           Color.GREEN,
           Color.YELLOW,
           Color.CYAN,
@@ -67,6 +78,15 @@ public class MultiBoxTracker {
   private int frameWidth;
   private int frameHeight;
   private int sensorOrientation;
+
+  public String time = CameraActivity.time;
+
+  public ArrayList<Float> ratioRecords = new ArrayList<>(); //store all the valid ratios
+  Set<String> labelNames = new HashSet<>(); //store label names for every two objects
+
+  HashMap<String, Float> widths = new HashMap<>(); //store widths for every two objects
+
+  public Boolean end = false;
 
   public MultiBoxTracker(final Context context) {
     for (final int color : COLORS) {
@@ -103,6 +123,7 @@ public class MultiBoxTracker {
     boxPaint.setAlpha(200);
     boxPaint.setStyle(Style.STROKE);
 
+    //___________________MAYBE ALTER HERE___________________________
     for (final Pair<Float, RectF> detection : screenRects) {
       final RectF rect = detection.second;
       canvas.drawRect(rect, boxPaint);
@@ -136,6 +157,8 @@ public class MultiBoxTracker {
                     false);
     for (final TrackedRecognition recognition : trackedObjects) {
       final RectF trackedPos = new RectF(recognition.location);
+      int count = 0; //only show ratio once for iris and pupil both showed up
+
 
       getFrameToCanvasMatrix().mapRect(trackedPos);
       boxPaint.setColor(recognition.color);
@@ -149,8 +172,43 @@ public class MultiBoxTracker {
                       : String.format("%.2f", (100 * recognition.detectionConfidence));
       //            borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.top,
       // labelString);
+
+      //BELOW SHOULD BE UNCOMMENTED, HERE IS WHERE THE CONFIDENCE THRES, LABELNAME TEXTS
+      Log.d("one recognition obj",String.valueOf(recognition.title) + " : " + String.valueOf(trackedPos.width()));
       borderedText.drawText(
-              canvas, trackedPos.left + cornerSize, trackedPos.top, labelString + "%", boxPaint);
+              canvas, trackedPos.left + cornerSize, (trackedPos.top-120), labelString + "%", boxPaint);
+
+      labelNames.add(recognition.title);
+      widths.put(recognition.title, trackedPos.width());
+
+      if(count++ % 2 == 0 && labelNames.size() == 2){ //check in every 2 objects
+        Log.d("inside if", String.valueOf(labelNames.toString()));
+        float irisWidth = widths.get("iris");
+        float pupilWidth = widths.get("pupil");
+        float pupilToIrisRatio = pupilWidth/irisWidth;
+        //if size = 2, it means in two consecutive boxes, 2 different classes detected.
+        //According to previous research, 0.2 <ratio< 0.7
+        Log.d("labelNames.size", String.valueOf(labelNames.size()));
+        Log.d("Pupil to Iris Ratio", String.valueOf(pupilToIrisRatio));
+
+        if(labelNames.size() == 2 && (pupilToIrisRatio > 0.2f) && (pupilToIrisRatio < 0.7f)){
+          Log.d("Inside Loop", "YES");
+          ratioRecords.add(pupilToIrisRatio); //store all the ratio, and calculate average after timer stop
+
+          Paint ratioTextPaint = boxPaint;
+          ratioTextPaint.setColor(Color.GREEN); //green for ratio
+          ratioTextPaint.setTextSize(90.0f); //enlarge the text size
+          borderedText.drawText(
+                  canvas, 10, 40, "pupil-iris ratio " + String.valueOf(pupilToIrisRatio), ratioTextPaint);
+
+        }
+        if(ratioRecords.size() == 200){
+          end = true;
+        }
+        widths.clear();
+        count = 0;
+        labelNames.clear();
+      }
     }
   }
 

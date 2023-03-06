@@ -25,6 +25,17 @@
     <org.tensorflow.lite.examples.detection.customview.OverlayView
         android:id="@+id/tracking_overlay"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        />
+
+    <TextView
+        android:id="@+id/timer"
+        android:layout_width="381dp"
+        android:layout_height="63dp"
+        android:layout_marginTop="20dp"
+        android:text="00 : 00"
+        android:textAlignment="viewEnd"
+        android:textSize="20dp" />
+
 
 </FrameLayout>

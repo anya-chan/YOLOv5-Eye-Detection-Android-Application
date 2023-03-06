@@ -431,22 +431,27 @@ public class YoloV5Classifier implements Classifier {
 
             final float confidenceInClass = maxClass * confidence;
             if (confidenceInClass > getObjThresh()) {
-                final float xPos = out[0][i][0];
-                final float yPos = out[0][i][1];
+                final float xPos = out[0][i][0]; //x_center
+                final float yPos = out[0][i][1]; //y_center
 
-                final float w = out[0][i][2];
-                final float h = out[0][i][3];
-                Log.d("YoloV5Classifier",
-                        Float.toString(xPos) + ',' + yPos + ',' + w + ',' + h);
+                final float w = out[0][i][2]; //width of bounding box
+                final float h = out[0][i][3]; //height of bounding box
+                //Log.d("YoloV5Classifier",
+                //        labels.get(detectedClass) + Float.toString(xPos) + ',' + yPos + ',' + w + ',' + h);
+                //labelname
 
+                //BELOW IS RECTF object for the bounding box position
+                Log.d("Bitmap width", String.valueOf(bitmap.getWidth()));
+                float xPos_new = (bitmap.getWidth()/2-(xPos + w / 2)+bitmap.getWidth()/2+w/2);
                 final RectF rect =
                         new RectF(
-                                Math.max(0, xPos - w / 2),
+                                Math.max(0, xPos_new - w / 2),
                                 Math.max(0, yPos - h / 2),
-                                Math.min(bitmap.getWidth() - 1, xPos + w / 2),
+                                Math.min(bitmap.getWidth() - 1, xPos_new + w / 2),
                                 Math.min(bitmap.getHeight() - 1, yPos + h / 2));
-                detections.add(new Recognition("" + offset, labels.get(detectedClass),
-                        confidenceInClass, rect, detectedClass));
+                detections.add(new Recognition("" + offset, labels.get(detectedClass), //title: labels.get(detectedClass)
+                        confidenceInClass , rect, detectedClass)); //confidence: confidenceInClass
+                //Log.d("within detections", String.valueOf(detections));
             }
         }
 

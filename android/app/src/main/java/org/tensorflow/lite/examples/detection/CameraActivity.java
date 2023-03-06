@@ -19,6 +19,7 @@ package org.tensorflow.lite.examples.detection;
 import android.Manifest;
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.hardware.Camera;
@@ -39,6 +40,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.View;
@@ -46,7 +48,6 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -105,13 +106,26 @@ public abstract class CameraActivity extends AppCompatActivity
 
   ArrayList<String> deviceStrings = new ArrayList<String>();
 
+  //TextView textView; //ANYA
+  public static String time; //ANYA
+
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
+
+    //textView= (TextView) findViewById(R.id.textView);
     LOGGER.d("onCreate " + this);
     super.onCreate(null);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
     setContentView(R.layout.tfe_od_activity_camera);
+
+    //ANYA
+    Intent intent = getIntent();
+    time = intent.getStringExtra("time");
+    Log.e("Time here is: ", time);
+    passTime(time);
+
+
     Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
     getSupportActionBar().setDisplayShowTitleEnabled(false);
@@ -222,6 +236,8 @@ public abstract class CameraActivity extends AppCompatActivity
     minusImageView.setOnClickListener(this);
   }
 
+  //new method @ANYA
+
 
 
   protected ArrayList<String> getModelStrings(AssetManager mgr, String path){
@@ -246,6 +262,8 @@ public abstract class CameraActivity extends AppCompatActivity
     imageConverter.run();
     return rgbBytes;
   }
+
+
 
   protected int getLuminanceStride() {
     return yRowStride;
@@ -356,6 +374,7 @@ public abstract class CameraActivity extends AppCompatActivity
           };
 
       processImage();
+
     } catch (final Exception e) {
       LOGGER.e(e, "Exception!");
       Trace.endSection();
@@ -468,7 +487,7 @@ public abstract class CameraActivity extends AppCompatActivity
     return requiredLevel <= deviceLevel;
   }
 
-  private String chooseCamera() {
+  private String chooseCamera() { //0:back 1:front 2:infrared
     final CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
     try {
       for (final String cameraId : manager.getCameraIdList()) {
@@ -495,7 +514,7 @@ public abstract class CameraActivity extends AppCompatActivity
                 || isHardwareLevelSupported(
                     characteristics, CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL);
         LOGGER.i("Camera API lv2?: %s", useCamera2API);
-        return cameraId;
+        return "2"; //original: cameraId
       }
     } catch (CameraAccessException e) {
       LOGGER.e(e, "Not allowed to access camera");
@@ -610,7 +629,7 @@ public abstract class CameraActivity extends AppCompatActivity
   }
 
   protected abstract void updateActiveModel();
-  protected abstract void processImage();
+  protected abstract void processImage(); //added a param ANYA
 
   protected abstract void onPreviewSizeChosen(final Size size, final int rotation);
 
@@ -621,4 +640,10 @@ public abstract class CameraActivity extends AppCompatActivity
   protected abstract void setNumThreads(int numThreads);
 
   protected abstract void setUseNNAPI(boolean isChecked);
+
+  protected abstract void textView(String time);
+
+  protected abstract void passTime(String time);
+
 }
+

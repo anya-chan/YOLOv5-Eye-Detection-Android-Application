@@ -16,6 +16,7 @@
 
 package org.tensorflow.lite.examples.detection;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -26,13 +27,18 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.media.ImageReader.OnImageAvailableListener;
+import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -80,6 +86,21 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     private BorderedText borderedText;
 
+    TextView timeLeft;
+
+    String time;
+
+    Boolean timesUp = false;
+
+    public void textView(String time){
+        setContentView(R.layout.tfe_od_camera_connection_fragment_tracking);
+        timeLeft = (TextView) findViewById(R.id.timer);
+        Log.e("TEXTVIEW", String.valueOf(timeLeft));
+        String text = time;
+        Log.e("text ", text);
+        //timeLeft.setText(text);
+
+    }
     @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
         final float textSizePx =
@@ -125,6 +146,22 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         cropToFrameTransform = new Matrix();
         frameToCropTransform.invert(cropToFrameTransform);
+
+        //ANYA
+        timeLeft = (TextView) findViewById(R.id.timer);
+        Log.e("Time", String.valueOf(time.charAt(0)));
+        long t= Long.parseLong(String.valueOf(time.charAt(0))) * 60;
+        new CountDownTimer(t*1000, 1000)
+        {
+            public void onTick(long millisUntilFinished) {
+
+                timeLeft.setText("Timer : " + (millisUntilFinished /1000) + " sec");
+            }
+            public void onFinish() {
+                timeLeft.setText("Done");
+                timesUp = true;
+            }
+        }.start();
 
         trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
@@ -241,6 +278,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                 new Runnable() {
                     @Override
                     public void run() {
+
                         LOGGER.i("Running detection on image " + currTimestamp);
                         final long startTime = SystemClock.uptimeMillis();
                         final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
@@ -270,6 +308,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                             if (location != null && result.getConfidence() >= minimumConfidence) {
                                 canvas.drawRect(location, paint);
 
+
                                 cropToFrameTransform.mapRect(location);
 
                                 result.setLocation(location);
@@ -289,6 +328,13 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                                         showFrameInfo(previewWidth + "x" + previewHeight);
                                         showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
                                         showInference(lastProcessingTimeMs + "ms");
+                                        if(timesUp == true){ //new condition, ANYA
+                                            Intent intent = new Intent(getApplicationContext(), ResultActivity.class);
+                                            Bundle args = new Bundle();
+                                            args.putSerializable("ARRAYLIST",(Serializable)tracker.ratioRecords);
+                                            intent.putExtra("BUNDLE",args);
+                                            startActivity(intent);
+                                        }
                                     }
                                 });
                     }
@@ -320,4 +366,9 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     protected void setNumThreads(final int numThreads) {
         runInBackground(() -> detector.setNumThreads(numThreads));
     }
+
+    protected void passTime(String time){
+        this.time = time;
+    }
+
 }

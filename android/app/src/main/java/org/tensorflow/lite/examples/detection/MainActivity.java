@@ -14,6 +14,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -32,7 +33,9 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.3f;
+    public static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.7f;
+
+    private Button stopButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,13 +44,26 @@ public class MainActivity extends AppCompatActivity {
 
         cameraButton = findViewById(R.id.cameraButton);
         detectButton = findViewById(R.id.detectButton);
+        //new stopButton @ANYA
+        //stopButton = (Button) findViewById(R.id.stopButton);
+
+        //new eventListener @ANYA
+        /*
+        stopButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                openResultActivity();
+            }
+
+        });
+        */
         imageView = findViewById(R.id.imageView);
 
         cameraButton.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, DetectorActivity.class)));
 
         detectButton.setOnClickListener(v -> {
             Handler handler = new Handler();
-
+            //RESULT IS HERE
             new Thread(() -> {
                 final List<Classifier.Recognition> results = detector.recognizeImage(cropBitmap);
                 handler.post(new Runnable() {
@@ -104,6 +120,8 @@ public class MainActivity extends AppCompatActivity {
     private Button cameraButton, detectButton;
     private ImageView imageView;
 
+
+
     private void initBox() {
         previewHeight = TF_OD_API_INPUT_SIZE;
         previewWidth = TF_OD_API_INPUT_SIZE;
@@ -152,8 +170,10 @@ public class MainActivity extends AppCompatActivity {
         final List<Classifier.Recognition> mappedRecognitions =
                 new LinkedList<Classifier.Recognition>();
 
+
         for (final Classifier.Recognition result : results) {
             final RectF location = result.getLocation();
+            Log.d("Recognition result", String.valueOf(location));
             if (location != null && result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API) {
                 canvas.drawRect(location, paint);
 //                cropToFrameTransform.mapRect(location);
@@ -162,6 +182,7 @@ public class MainActivity extends AppCompatActivity {
 //                mappedRecognitions.add(result);
             }
         }
+
 //        tracker.trackResults(mappedRecognitions, new Random().nextInt());
 //        trackingOverlay.postInvalidate();
         imageView.setImageBitmap(bitmap);
