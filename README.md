@@ -5,6 +5,7 @@ Since the release of YOLOv5 v6.0, TFLite models can be exported by `export.py` i
 
 <del>**Because this branch persistently rebases to master branch of ultralytics/yolov5, use `git pull --rebase` or `git pull -f` instead of `git pull`.**</del>
 
+<strong>Please note that: the android application is about eye detection for stress management, I have altered some codes in this project.</strong>
 
 ## Usage
 ### 1. Git clone Ultralytics `yolov5`
